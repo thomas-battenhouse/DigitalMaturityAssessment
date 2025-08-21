@@ -51,10 +51,7 @@
             <div id="kpi-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- KPI cards will be dynamically added here -->
             </div>
-            <!-- Overall Composite Score -->
-            <div id="composite-score-container" class="mt-8 p-6 rounded-2xl bg-gray-200 text-gray-800">
-                <!-- Composite score will be added here -->
-            </div>
+            <!-- Overall Composite Score box removed as requested -->
             <!-- Legend -->
             <div id="legend-container" class="mt-8 p-6 rounded-2xl bg-gray-50 border border-gray-200 text-gray-700">
                 <!-- Legend will be added here -->
@@ -140,19 +137,9 @@
                 },
             ];
             
-            // Map scores to an animal level for easy visualization
-            const animalLevels = {
-                1: '🦋 Butterfly',
-                2: '🐦 Sparrow',
-                3: '🐿️ Squirrel',
-                4: '🦊 Fox',
-                5: '🦉 Owl',
-            };
-
             const form = document.getElementById('assessment-form');
             const resultsDashboard = document.getElementById('results-dashboard');
             const kpiContainer = document.getElementById('kpi-container');
-            const compositeContainer = document.getElementById('composite-score-container');
             const legendContainer = document.getElementById('legend-container');
             const resetButton = document.getElementById('reset-button');
             const kpiColors = ['kpi-blue', 'kpi-teal', 'kpi-orange', 'kpi-emerald', 'kpi-purple', 'kpi-rose'];
@@ -260,7 +247,6 @@
                 
                 let compositeScore = 0;
                 if (totalQuestionsAnswered > 0) {
-                    // Changed to round to the nearest whole number as requested
                     compositeScore = Math.round(totalCompositeScore / totalQuestionsAnswered);
                 }
 
@@ -273,7 +259,6 @@
             // --- 4. RENDER RESULTS ---
             function renderResults(results, compositeScore) {
                 kpiContainer.innerHTML = ''; // Clear previous results
-                compositeContainer.innerHTML = '';
                 legendContainer.innerHTML = '';
 
                 // Render the radar chart visualization
@@ -303,30 +288,10 @@
                     kpiContainer.appendChild(kpiDiv);
                 });
                 
-                // Render Composite Score
-                const compositeAnimal = animalLevels[compositeScore] || '❓ Unknown';
-
-                const compositeHTML = `
-                    <div class="flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-4 sm:space-y-0 sm:space-x-8">
-                        <div class="text-3xl sm:text-4xl font-extrabold flex-grow text-center sm:text-left">
-                            Overall Maturity
-                        </div>
-                        <div class="flex items-center flex-grow justify-end space-x-4 sm:space-x-8">
-                            <span class="text-5xl font-extrabold text-black">${compositeScore}</span>
-                            <span class="flex flex-col items-center">
-                                <span class="text-2xl">${compositeAnimal.split(' ')[0]}</span>
-                                <span class="text-sm mt-2 opacity-90">${compositeAnimal.split(' ').slice(1).join(' ')}</span>
-                            </span>
-                        </div>
-                    </div>
-                `;
-                compositeContainer.innerHTML = compositeHTML;
-
-
                 // Render Legend
                 const legendTitle = document.createElement('h4');
-                legendTitle.className = 'text-lg font-bold mb-4 text-center';
-                legendTitle.textContent = 'Maturity Level Legend';
+                legendTitle.className = 'text-3xl font-extrabold text-blue-800 mb-6 text-center';
+                legendTitle.textContent = 'Overall Digital Maturity';
                 legendContainer.appendChild(legendTitle);
 
                 const legendList = document.createElement('div');
@@ -334,8 +299,15 @@
                 
                 for (let i = 1; i <= 5; i++) {
                     const legendItem = document.createElement('div');
-                    legendItem.className = 'text-md flex items-center mb-2 whitespace-nowrap';
-                    legendItem.innerHTML = `<span class="font-bold mr-2 text-blue-600">Level ${i}:</span> ${animalLevels[i]}`;
+                    
+                    // Highlight the item that matches the composite score
+                    let itemClass = `text-md flex items-center mb-2 px-4 py-2 whitespace-nowrap rounded-xl`;
+                    if (i === compositeScore) {
+                        itemClass += ` border-4 border-black`;
+                    }
+                    legendItem.className = itemClass;
+                    
+                    legendItem.innerHTML = `<span class="font-bold mr-2 text-blue-600">Level ${i}</span>`;
                     legendList.appendChild(legendItem);
                 }
                 legendContainer.appendChild(legendList);
