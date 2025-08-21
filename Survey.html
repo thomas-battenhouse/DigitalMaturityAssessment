@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital EHS&S Maturity Assessment</title>
+    <!-- Use a modern font and Tailwind CSS for styling -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom colors for the KPI cards */
+        .kpi-blue { background-color: #2563EB; }
+        .kpi-teal { background-color: #0D9488; }
+        .kpi-orange { background-color: #EA580C; }
+        .kpi-emerald { background-color: #059669; }
+        .kpi-purple { background-color: #7C3AED; }
+        .kpi-rose { background-color: #E11D48; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white p-6 sm:p-10 rounded-3xl shadow-2xl">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-blue-800 mb-2">Digital EHS&S Maturity</h1>
+            <p class="text-lg text-gray-600">Assess your organization's digital maturity across six key pillars.</p>
+        </header>
+
+        <!-- Questionnaire Section -->
+        <form id="assessment-form">
+            <!-- This section will be populated dynamically by JavaScript -->
+        </form>
+
+        <!-- Results Dashboard Section -->
+        <div id="results-dashboard" class="hidden text-center">
+            <h2 class="text-3xl font-extrabold text-blue-800 mb-6">Your Maturity Dashboard</h2>
+            <p class="text-lg text-gray-600 mb-10">
+                Below are your calculated average scores for each pillar.
+            </p>
+            <div id="kpi-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- KPI cards will be dynamically added here -->
+            </div>
+            <button id="reset-button" class="mt-12 bg-gray-700 text-white font-bold py-3 px-8 rounded-xl text-md shadow-xl transition-all hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-400">
+                Take Assessment Again
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 1. DATA DEFINITION ---
+            // Define the questionnaire data as a JavaScript array of objects.
+            const questionnaireData = [
+                {
+                    id: 'governance',
+                    title: '1. Governance & Leadership',
+                    questions: [
+                        'Our EHS&S strategy is deliberately and visibly aligned with the company\'s core business objectives and strategic planning process.',
+                        'There is effective sponsorship of digital EHS&S initiatives from our C-suite and senior leadership.',
+                        'We have a dedicated, cross-functional governance committee that oversees our digital EHS&S strategy.',
+                        'EHS&S initiatives are viewed as a source of competitive advantage and operational excellence, not just a compliance function.',
+                        'Leaders at all levels actively champion the adoption of new digital EHS&S tools and processes.',
+                    ],
+                },
+                {
+                    id: 'process',
+                    title: '2. Process Digitalization',
+                    questions: [
+                        'Our EHS&S data is predominantly collected using automated digital methods, with minimal reliance on manual or paper-based processes.',
+                        'Our EHS&S workflows (e.g., incident reporting, corrective actions) are fully digital from start to finish.',
+                        'Approvals, escalations, and notifications for EHS&S processes are fully automated within our digital systems.',
+                        'Our EHS&S reports are generated in near real-time and are always up-to-date.',
+                        'Our EHS&S processes are designed for an end-to-end digital experience, not just for digitizing manual data entry.',
+                    ],
+                },
+                {
+                    id: 'agility',
+                    title: '3. Digital Workforce Agility',
+                    questions: [
+                        'Our employees receive continuous training on new digital tools and technologies beyond what is required for basic compliance.',
+                        'The company actively seeks and rewards fresh ideas from the entire workforce for improving EHS&S processes.',
+                        'Employees are encouraged to embrace AI-assistance and are eager to leverage it in their work.',
+                        'The concept of continuous improvement is a cultural norm and is deeply ingrained in our EHS&S practices.',
+                        'Employees feel a sense of ownership over the digital tools they use and contribute to their ongoing refinement.',
+                    ],
+                },
+                {
+                    id: 'analytics',
+                    title: '4. Performance Monitoring and Analytics',
+                    questions: [
+                        'Our EHS&S reporting goes well beyond basic performance data and includes in-depth trending and analysis.',
+                        'Our EHS&S metrics are directly linked to and inform broader business outcomes.',
+                        'We regularly use predictive analytics and machine learning to forecast potential EHS&S risks or identify emerging trends.',
+                        'We frequently benchmark our EHS&S performance against industry peers.',
+                        'We use AI-driven analysis to extract strategic insights from our EHS&S data that inform executive decision-making.',
+                    ],
+                },
+                {
+                    id: 'systems',
+                    title: '5. Connected Systems',
+                    questions: [
+                        'Our EHS&S data is seamlessly exchanged with other enterprise platforms like ERP, HR, and supply chain systems.',
+                        'Our systems automatically share and synchronize EHS&S data across the enterprise, eliminating manual data transfer.',
+                        'Data from our different EHS&S tools has been merged into a single, consolidated, & reliable data stream for unified analysis.',
+                        'We have a fully connected architecture that enables real-time data flow from devices and sensors to our EHS&S platform.',
+                        'We can automatically and easily pull EHS&S data for ESG reporting platforms without manual intervention.',
+                    ],
+                },
+                {
+                    id: 'risk',
+                    title: '6. Risk Intelligence',
+                    questions: [
+                        'We conduct formal, systematic, and frequent risk assessments across all our operations.',
+                        'We receive real-time alerts for high-risk events based on continuous data streaming from our connected network.',
+                        'Our system automatically escalates critical safety or environmental issues to the appropriate personnel.',
+                        'We have a systematic, automated approach for measuring the frequency and consequences of EHS&S events.',
+                        'We use predictive models to identify key risk factors in real-time and leadership takes proactive measures to mitigate risks.',
+                    ],
+                },
+            ];
+
+            const form = document.getElementById('assessment-form');
+            const resultsDashboard = document.getElementById('results-dashboard');
+            const kpiContainer = document.getElementById('kpi-container');
+            const resetButton = document.getElementById('reset-button');
+            const kpiColors = ['kpi-blue', 'kpi-teal', 'kpi-orange', 'kpi-emerald', 'kpi-purple', 'kpi-rose'];
+
+            // --- 2. DYNAMICALLY GENERATE FORM HTML ---
+            function renderForm() {
+                form.innerHTML = ''; // Clear previous content
+                questionnaireData.forEach(pillar => {
+                    const pillarDiv = document.createElement('div');
+                    pillarDiv.className = 'mb-8 p-6 bg-gray-50 rounded-2xl shadow-inner border border-gray-200';
+                    
+                    const title = document.createElement('h2');
+                    title.className = 'text-2xl font-bold text-blue-700 mb-4';
+                    title.textContent = pillar.title;
+                    pillarDiv.appendChild(title);
+
+                    const subtitle = document.createElement('p');
+                    subtitle.className = 'text-md text-gray-600 mb-4 font-medium';
+                    subtitle.textContent = 'Rate the degree to which the following statements are true for your organization - with 1 being the least true and 5 being the most.';
+                    pillarDiv.appendChild(subtitle);
+
+                    pillar.questions.forEach((question, qIndex) => {
+                        const questionDiv = document.createElement('div');
+                        questionDiv.className = 'mb-6';
+                        questionDiv.innerHTML = `<p class="text-md mb-2 font-medium leading-relaxed">${qIndex + 1}. ${question}</p>`;
+                        
+                        const buttonContainer = document.createElement('div');
+                        buttonContainer.className = 'flex flex-wrap items-center space-x-2 sm:space-x-4';
+                        
+                        for (let score = 1; score <= 5; score++) {
+                            const button = document.createElement('button');
+                            button.type = 'button';
+                            button.textContent = score;
+                            button.className = 'px-4 py-2 rounded-xl text-lg font-bold transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 bg-gray-200 text-gray-700 hover:bg-gray-300';
+                            
+                            // Attach event listener to handle button selection
+                            button.addEventListener('click', () => {
+                                // Deactivate all other buttons in this question's group
+                                buttonContainer.querySelectorAll('button').forEach(btn => {
+                                    btn.className = btn.className.replace('bg-blue-500 text-white shadow-lg', 'bg-gray-200 text-gray-700 hover:bg-gray-300');
+                                });
+                                // Activate the clicked button
+                                button.className = button.className.replace('bg-gray-200 text-gray-700 hover:bg-gray-300', 'bg-blue-500 text-white shadow-lg');
+                                
+                                // Store the selected score in the button's data attribute
+                                button.setAttribute('data-score', score);
+                            });
+                            buttonContainer.appendChild(button);
+                        }
+                        questionDiv.appendChild(buttonContainer);
+                        pillarDiv.appendChild(questionDiv);
+                    });
+                    form.appendChild(pillarDiv);
+                });
+
+                // Add the submit button at the end
+                const submitButton = document.createElement('button');
+                submitButton.type = 'submit';
+                submitButton.textContent = 'Submit Assessment';
+                submitButton.className = 'w-full sm:w-auto bg-blue-600 text-white font-bold py-4 px-12 rounded-xl text-lg shadow-xl transition-all hover:bg-blue-700 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-blue-400 mt-10';
+                form.appendChild(submitButton);
+            }
+
+            // --- 3. EVENT LISTENERS ---
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const results = {};
+                questionnaireData.forEach(pillar => {
+                    let totalScore = 0;
+                    let answeredCount = 0;
+                    
+                    pillar.questions.forEach((_, qIndex) => {
+                        const scoreButtons = form.querySelectorAll(`[data-score]:not([data-score=""]):not([data-score="0"])`);
+                        scoreButtons.forEach(button => {
+                            // Check if the button belongs to the current pillar and question
+                            const parentPillarDiv = button.closest('.mb-8');
+                            const parentQuestionDiv = button.closest('.mb-6');
+                            if (parentPillarDiv && parentQuestionDiv) {
+                                const questionText = parentQuestionDiv.querySelector('p').textContent.replace(/^\d+\.\s/, '');
+                                if (questionnaireData.find(p => p.title === pillar.title).questions.includes(questionText)) {
+                                    if (questionnaireData.find(p => p.title === pillar.title).questions[qIndex] === questionText) {
+                                        const score = parseInt(button.getAttribute('data-score'));
+                                        if (!isNaN(score)) {
+                                            totalScore += score;
+                                            answeredCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    });
+                    
+                    if (answeredCount > 0) {
+                        results[pillar.title] = (totalScore / answeredCount).toFixed(1);
+                    } else {
+                        results[pillar.title] = '0.0';
+                    }
+                });
+            
+                renderResults(results);
+                form.classList.add('hidden');
+                resultsDashboard.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            // --- 4. RENDER RESULTS ---
+            function renderResults(results) {
+                kpiContainer.innerHTML = ''; // Clear previous results
+                const pillars = Object.keys(results);
+                pillars.forEach((pillar, index) => {
+                    const kpiDiv = document.createElement('div');
+                    kpiDiv.className = `${kpiColors[index % kpiColors.length]} text-white p-8 rounded-2xl shadow-lg flex flex-col items-center justify-center text-center transform transition-all duration-300 hover:scale-105`;
+                    
+                    const title = document.createElement('h3');
+                    title.className = 'text-xl font-bold mb-2 leading-tight';
+                    title.textContent = pillar;
+                    
+                    const score = document.createElement('div');
+                    score.className = 'text-5xl font-extrabold';
+                    score.textContent = results[pillar];
+                    
+                    const subtext = document.createElement('p');
+                    subtext.className = 'text-sm mt-2 opacity-90';
+                    subtext.textContent = 'Avg. Score';
+                    
+                    kpiDiv.appendChild(title);
+                    kpiDiv.appendChild(score);
+                    kpiDiv.appendChild(subtext);
+                    
+                    kpiContainer.appendChild(kpiDiv);
+                });
+            }
+
+            // --- 5. RESET FUNCTIONALITY ---
+            resetButton.addEventListener('click', () => {
+                form.classList.remove('hidden');
+                resultsDashboard.classList.add('hidden');
+                renderForm(); // Re-render a fresh form
+            });
+
+            // Initial rendering of the form
+            renderForm();
+        });
+    </script>
+</body>
+</html>
