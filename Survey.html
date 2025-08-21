@@ -18,6 +18,11 @@
         .kpi-emerald { background-color: #059669; }
         .kpi-purple { background-color: #7C3AED; }
         .kpi-rose { background-color: #E11D48; }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-4 sm:p-8">
@@ -39,8 +44,20 @@
             <p class="text-lg text-gray-600 mb-10">
                 Below are your calculated average scores for each pillar.
             </p>
+            <!-- Radar Chart Canvas -->
+            <div class="flex justify-center my-8">
+                <canvas id="radar-chart" class="rounded-2xl"></canvas>
+            </div>
             <div id="kpi-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- KPI cards will be dynamically added here -->
+            </div>
+            <!-- Overall Composite Score -->
+            <div id="composite-score-container" class="mt-8 p-6 rounded-2xl bg-gray-200 text-gray-800">
+                <!-- Composite score will be added here -->
+            </div>
+            <!-- Legend -->
+            <div id="legend-container" class="mt-8 p-6 rounded-2xl bg-gray-50 border border-gray-200 text-gray-700">
+                <!-- Legend will be added here -->
             </div>
             <button id="reset-button" class="mt-12 bg-gray-700 text-white font-bold py-3 px-8 rounded-xl text-md shadow-xl transition-all hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-400">
                 Take Assessment Again
@@ -60,7 +77,7 @@
                     title: '1. Governance & Leadership',
                     questions: [
                         'Our EHS&S strategy is deliberately and visibly aligned with the company\'s core business objectives and strategic planning process.',
-                        'There is effective sponsorship of digital EHS&S initiatives from our C-suite and senior leadership.',
+                        'There is active, visible sponsorship of digital EHS&S initiatives from our C-suite and senior leadership.',
                         'We have a dedicated, cross-functional governance committee that oversees our digital EHS&S strategy.',
                         'EHS&S initiatives are viewed as a source of competitive advantage and operational excellence, not just a compliance function.',
                         'Leaders at all levels actively champion the adoption of new digital EHS&S tools and processes.',
@@ -83,7 +100,7 @@
                     questions: [
                         'Our employees receive continuous training on new digital tools and technologies beyond what is required for basic compliance.',
                         'The company actively seeks and rewards fresh ideas from the entire workforce for improving EHS&S processes.',
-                        'Employees are encouraged to embrace AI-assistance and are eager to leverage it in their work.',
+                        'Employees are empowered to experiment with new, AI-assisted workflows or digital tools to solve EHS&S challenges.',
                         'The concept of continuous improvement is a cultural norm and is deeply ingrained in our EHS&S practices.',
                         'Employees feel a sense of ownership over the digital tools they use and contribute to their ongoing refinement.',
                     ],
@@ -92,10 +109,10 @@
                     id: 'analytics',
                     title: '4. Performance Monitoring and Analytics',
                     questions: [
-                        'Our EHS&S reporting goes well beyond basic performance data and includes in-depth trending and analysis.',
+                        'Our EHS&S reporting goes beyond basic reactionary data and includes in-depth trending and analysis.',
                         'Our EHS&S metrics are directly linked to and inform broader business outcomes.',
                         'We regularly use predictive analytics and machine learning to forecast potential EHS&S risks or identify emerging trends.',
-                        'We frequently benchmark our EHS&S performance against industry peers.',
+                        'We can easily and accurately benchmark our EHS&S performance against industry peers in real-time.',
                         'We use AI-driven analysis to extract strategic insights from our EHS&S data that inform executive decision-making.',
                     ],
                 },
@@ -105,8 +122,8 @@
                     questions: [
                         'Our EHS&S data is seamlessly exchanged with other enterprise platforms like ERP, HR, and supply chain systems.',
                         'Our systems automatically share and synchronize EHS&S data across the enterprise, eliminating manual data transfer.',
-                        'Data from our different EHS&S tools has been merged into a single, consolidated, & reliable data stream for unified analysis.',
-                        'We have a fully connected architecture that enables real-time data flow from devices and sensors to our EHS&S platform.',
+                        'Data from our different EHS&S tools has been merged into a single, consolidated data stream for unified analysis.',
+                        'We have a fully connected architecture that enables real-time data flow from IoT sensors to our EHS&S platform.',
                         'We can automatically and easily pull EHS&S data for ESG reporting platforms without manual intervention.',
                     ],
                 },
@@ -118,21 +135,32 @@
                         'We receive real-time alerts for high-risk events based on continuous data streaming from our connected network.',
                         'Our system automatically escalates critical safety or environmental issues to the appropriate personnel.',
                         'We have a systematic, automated approach for measuring the frequency and consequences of EHS&S events.',
-                        'We use predictive models to identify key risk factors in real-time and leadership takes proactive measures to mitigate risks.',
+                        'Our risk management is based on predictive models that use data to identify key risk factors in real-time.',
                     ],
                 },
             ];
+            
+            // Map scores to an animal level for easy visualization
+            const animalLevels = {
+                1: '🦋 Butterfly',
+                2: '🐦 Sparrow',
+                3: '🐿️ Squirrel',
+                4: '🦊 Fox',
+                5: '🦉 Owl',
+            };
 
             const form = document.getElementById('assessment-form');
             const resultsDashboard = document.getElementById('results-dashboard');
             const kpiContainer = document.getElementById('kpi-container');
+            const compositeContainer = document.getElementById('composite-score-container');
+            const legendContainer = document.getElementById('legend-container');
             const resetButton = document.getElementById('reset-button');
             const kpiColors = ['kpi-blue', 'kpi-teal', 'kpi-orange', 'kpi-emerald', 'kpi-purple', 'kpi-rose'];
 
             // --- 2. DYNAMICALLY GENERATE FORM HTML ---
             function renderForm() {
                 form.innerHTML = ''; // Clear previous content
-                questionnaireData.forEach(pillar => {
+                questionnaireData.forEach((pillar, pillarIndex) => {
                     const pillarDiv = document.createElement('div');
                     pillarDiv.className = 'mb-8 p-6 bg-gray-50 rounded-2xl shadow-inner border border-gray-200';
                     
@@ -160,9 +188,13 @@
                             button.textContent = score;
                             button.className = 'px-4 py-2 rounded-xl text-lg font-bold transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 bg-gray-200 text-gray-700 hover:bg-gray-300';
                             
+                            // Attach a data attribute to the button to link it to the question
+                            button.setAttribute('data-pillar-id', pillar.id);
+                            button.setAttribute('data-q-index', qIndex);
+
                             // Attach event listener to handle button selection
                             button.addEventListener('click', () => {
-                                // Deactivate all other buttons in this question's group
+                                // Deactivate all other buttons for this specific question
                                 buttonContainer.querySelectorAll('button').forEach(btn => {
                                     btn.className = btn.className.replace('bg-blue-500 text-white shadow-lg', 'bg-gray-200 text-gray-700 hover:bg-gray-300');
                                 });
@@ -192,48 +224,61 @@
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
+                const answeredScores = {};
+                // Select all buttons that have a data-score attribute
+                const scoreButtons = form.querySelectorAll('[data-score]');
+
+                // Iterate through the answered buttons and store the scores
+                scoreButtons.forEach(button => {
+                    const pillarId = button.getAttribute('data-pillar-id');
+                    const score = parseInt(button.getAttribute('data-score'));
+                    
+                    if (!answeredScores[pillarId]) {
+                        answeredScores[pillarId] = { total: 0, count: 0 };
+                    }
+                    if (!isNaN(score)) {
+                        answeredScores[pillarId].total += score;
+                        answeredScores[pillarId].count++;
+                    }
+                });
+
                 const results = {};
+                let totalCompositeScore = 0;
+                let totalQuestionsAnswered = 0;
+
                 questionnaireData.forEach(pillar => {
-                    let totalScore = 0;
-                    let answeredCount = 0;
-                    
-                    pillar.questions.forEach((_, qIndex) => {
-                        const scoreButtons = form.querySelectorAll(`[data-score]:not([data-score=""]):not([data-score="0"])`);
-                        scoreButtons.forEach(button => {
-                            // Check if the button belongs to the current pillar and question
-                            const parentPillarDiv = button.closest('.mb-8');
-                            const parentQuestionDiv = button.closest('.mb-6');
-                            if (parentPillarDiv && parentQuestionDiv) {
-                                const questionText = parentQuestionDiv.querySelector('p').textContent.replace(/^\d+\.\s/, '');
-                                if (questionnaireData.find(p => p.title === pillar.title).questions.includes(questionText)) {
-                                    if (questionnaireData.find(p => p.title === pillar.title).questions[qIndex] === questionText) {
-                                        const score = parseInt(button.getAttribute('data-score'));
-                                        if (!isNaN(score)) {
-                                            totalScore += score;
-                                            answeredCount++;
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                    });
-                    
-                    if (answeredCount > 0) {
-                        results[pillar.title] = (totalScore / answeredCount).toFixed(1);
+                    const scores = answeredScores[pillar.id];
+                    if (scores && scores.count > 0) {
+                        const avg = (scores.total / scores.count).toFixed(1);
+                        results[pillar.title] = avg;
+                        totalCompositeScore += scores.total;
+                        totalQuestionsAnswered += scores.count;
                     } else {
                         results[pillar.title] = '0.0';
                     }
                 });
-            
-                renderResults(results);
+                
+                let compositeScore = 0;
+                if (totalQuestionsAnswered > 0) {
+                    // Changed to round to the nearest whole number as requested
+                    compositeScore = Math.round(totalCompositeScore / totalQuestionsAnswered);
+                }
+
+                renderResults(results, compositeScore);
                 form.classList.add('hidden');
                 resultsDashboard.classList.remove('hidden');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
 
             // --- 4. RENDER RESULTS ---
-            function renderResults(results) {
+            function renderResults(results, compositeScore) {
                 kpiContainer.innerHTML = ''; // Clear previous results
+                compositeContainer.innerHTML = '';
+                legendContainer.innerHTML = '';
+
+                // Render the radar chart visualization
+                renderRadarChart(results);
+
                 const pillars = Object.keys(results);
                 pillars.forEach((pillar, index) => {
                     const kpiDiv = document.createElement('div');
@@ -242,24 +287,139 @@
                     const title = document.createElement('h3');
                     title.className = 'text-xl font-bold mb-2 leading-tight';
                     title.textContent = pillar;
-                    
-                    const score = document.createElement('div');
-                    score.className = 'text-5xl font-extrabold';
-                    score.textContent = results[pillar];
+
+                    const scoreDisplay = document.createElement('div');
+                    scoreDisplay.className = 'text-5xl font-extrabold';
+                    scoreDisplay.textContent = results[pillar];
                     
                     const subtext = document.createElement('p');
                     subtext.className = 'text-sm mt-2 opacity-90';
                     subtext.textContent = 'Avg. Score';
                     
                     kpiDiv.appendChild(title);
-                    kpiDiv.appendChild(score);
+                    kpiDiv.appendChild(scoreDisplay);
                     kpiDiv.appendChild(subtext);
                     
                     kpiContainer.appendChild(kpiDiv);
                 });
+                
+                // Render Composite Score
+                const compositeAnimal = animalLevels[compositeScore] || '❓ Unknown';
+
+                const compositeHTML = `
+                    <div class="flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-4 sm:space-y-0 sm:space-x-8">
+                        <div class="text-3xl sm:text-4xl font-extrabold flex-grow text-center sm:text-left">
+                            Overall Maturity
+                        </div>
+                        <div class="flex items-center flex-grow justify-end space-x-4 sm:space-x-8">
+                            <span class="text-5xl font-extrabold text-black">${compositeScore}</span>
+                            <span class="flex flex-col items-center">
+                                <span class="text-2xl">${compositeAnimal.split(' ')[0]}</span>
+                                <span class="text-sm mt-2 opacity-90">${compositeAnimal.split(' ').slice(1).join(' ')}</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+                compositeContainer.innerHTML = compositeHTML;
+
+
+                // Render Legend
+                const legendTitle = document.createElement('h4');
+                legendTitle.className = 'text-lg font-bold mb-4 text-center';
+                legendTitle.textContent = 'Maturity Level Legend';
+                legendContainer.appendChild(legendTitle);
+
+                const legendList = document.createElement('div');
+                legendList.className = 'flex flex-wrap justify-center space-x-6 sm:space-x-8';
+                
+                for (let i = 1; i <= 5; i++) {
+                    const legendItem = document.createElement('div');
+                    legendItem.className = 'text-md flex items-center mb-2 whitespace-nowrap';
+                    legendItem.innerHTML = `<span class="font-bold mr-2 text-blue-600">Level ${i}:</span> ${animalLevels[i]}`;
+                    legendList.appendChild(legendItem);
+                }
+                legendContainer.appendChild(legendList);
             }
 
-            // --- 5. RESET FUNCTIONALITY ---
+            // --- 5. RADAR CHART VISUALIZATION LOGIC ---
+            function renderRadarChart(results) {
+                const canvas = document.getElementById('radar-chart');
+                const ctx = canvas.getContext('2d');
+                const size = Math.min(400, window.innerWidth - 64);
+                canvas.width = size;
+                canvas.height = size;
+                const centerX = size / 2;
+                const centerY = size / 2;
+                const radius = (size / 2) * 0.7; // Use 70% of the half-size for the chart
+                const numPillars = questionnaireData.length;
+                const angleIncrement = (Math.PI * 2) / numPillars;
+                const pillarTitles = Object.keys(results);
+                const scores = Object.values(results).map(score => parseFloat(score));
+
+                // Clear the canvas
+                ctx.clearRect(0, 0, size, size);
+
+                // Draw the radar grid and labels
+                ctx.strokeStyle = '#E2E8F0'; // light gray
+                ctx.lineWidth = 1;
+                ctx.fillStyle = '#475569'; // slate gray
+                ctx.font = '14px Inter';
+
+                for (let i = 0; i < numPillars; i++) {
+                    const angle = i * angleIncrement - Math.PI / 2; // Start at the top
+                    const x = centerX + Math.cos(angle) * radius;
+                    const y = centerY + Math.sin(angle) * radius;
+                    
+                    // Draw axis line
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+
+                    // Draw labels
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(angle);
+                    ctx.textAlign = 'center';
+                    ctx.fillText(pillarTitles[i].split('. ')[1], 0, -5);
+                    ctx.restore();
+                }
+
+                // Draw score circles
+                ctx.lineWidth = 1;
+                for (let i = 1; i <= 5; i++) {
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, (radius / 5) * i, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    ctx.fillText(i, centerX, centerY - (radius / 5) * i);
+                }
+
+                // Draw the data polygon
+                ctx.beginPath();
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.4)'; // blue with transparency
+                ctx.strokeStyle = '#3B82F6'; // solid blue
+                ctx.lineWidth = 2;
+
+                for (let i = 0; i < numPillars; i++) {
+                    const angle = i * angleIncrement - Math.PI / 2;
+                    const score = scores[i];
+                    const pointRadius = (score / 5) * radius; // scale score to chart radius
+                    const x = centerX + Math.cos(angle) * pointRadius;
+                    const y = centerY + Math.sin(angle) * pointRadius;
+
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+
+            // --- 6. RESET FUNCTIONALITY ---
             resetButton.addEventListener('click', () => {
                 form.classList.remove('hidden');
                 resultsDashboard.classList.add('hidden');
